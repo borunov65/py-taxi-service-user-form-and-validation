@@ -7,6 +7,7 @@ from .forms import DriverCreationForm, DriverLicenseUpdateForm
 from .models import Driver, Car, Manufacturer
 from django.views.generic.edit import UpdateView
 from .forms import CarForm
+from django.http import HttpResponseForbidden
 
 
 @login_required
@@ -109,13 +110,23 @@ class DriverLicenseUpdateView(UpdateView):
 
 class AssignDriverView(LoginRequiredMixin, View):
     def post(self, request, pk):
+        if not isinstance(request.user, Driver):
+            return HttpResponseForbidden(
+                "Only drivers can be assigned to cars."
+            )
+
         car = get_object_or_404(Car, pk=pk)
         car.drivers.add(request.user)
-        return redirect("taxi:car-detail", pk=pk)
+        return redirect(car.get_absolute_url())
 
 
 class RemoveDriverView(LoginRequiredMixin, View):
     def post(self, request, pk):
+        if not isinstance(request.user, Driver):
+            return HttpResponseForbidden(
+                "Only drivers can be removed from cars."
+            )
+
         car = get_object_or_404(Car, pk=pk)
         car.drivers.remove(request.user)
-        return redirect("taxi:car-detail", pk=pk)
+        return redirect(car.get_absolute_url())
